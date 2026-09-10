@@ -45,12 +45,12 @@ try {
 </section>
 
 <section id="patternView" hidden>
-<div class="card"><b>マイパターン</b><div class="muted" style="margin-top:5px">毎月の基本設定。各月で変更してもパターンは変わりません。</div></div>
+<div class="card"><b>マイパターン</b><div class="muted" style="margin-top:5px">毎月の基本設定。各月で変更してもパターンは変わりません。<br>支払月は「当月」または「翌月」、日付は1〜31日で設定できます。</div></div>
 <div id="patterns"></div><button id="addPattern" class="primary" style="width:100%">＋ パターンを追加</button>
 </section>
 </main>
 <script>
-const STORE="sena-payment-manager-v2";
+const STORE="sena-payment-manager-v3";
 let state=JSON.parse(localStorage.getItem(STORE)||"null")||{view:new Date().toISOString().slice(0,7),months:{},patterns:[]};
 let hideDone=false;
 const $=id=>document.getElementById(id);
@@ -83,14 +83,18 @@ function render(){
 function renderPatterns(){
  const p=$("patterns");p.innerHTML="";
  state.patterns.forEach((x,i)=>{
+  if(!x.pid) x.pid=`p-${Date.now()}-${i}-${Math.random().toString(36).slice(2,8)}`;
+  if(x.offset!==1) x.offset=0;
   let d=document.createElement("div");d.className="card";
   d.innerHTML=`<div class="line"><input class="pn grow" value="${esc(x.name)}"><button class="pd danger">削除</button></div>
-  <div class="two" style="margin-top:8px"><input class="pa" type="number" min="0" value="${x.amount}"><input class="py" type="number" min="1" max="31" value="${x.day}" placeholder="毎月の日付"></div>
-  <input class="po note" value="${esc(x.note||"")}" placeholder="備考（任意）">`;
-  d.querySelector(".pn").onchange=e=>{x.name=e.target.value.trim()||"未入力";save()};
+  <div class="two" style="margin-top:8px"><input class="pa" type="number" min="0" value="${x.amount}"><div class="two"><select class="poff" aria-label="支払月"><option value="0" ${x.offset===0?"selected":""}>当月</option><option value="1" ${x.offset===1?"selected":""}>翌月</option></select><input class="py" type="number" min="1" max="31" value="${x.day}" placeholder="支払日"></div></div>
+  <div class="muted" style="margin-top:6px">${x.offset===0?"当月":"翌月"} ${x.day}日に支払い</div>
+  <input class="pnote note" value="${esc(x.note||"")}" placeholder="備考（任意）">`;
+  d.querySelector(".pn").onchange=e=>{x.name=e.target.value.trim()||"未入力";save();renderPatterns()};
   d.querySelector(".pa").onchange=e=>{x.amount=Math.max(0,Number(e.target.value)||0);save()};
-  d.querySelector(".py").onchange=e=>{x.day=Math.min(31,Math.max(1,Number(e.target.value)||1));save()};
-  d.querySelector(".po").onchange=e=>{x.note=e.target.value;save()};
+  d.querySelector(".poff").onchange=e=>{x.offset=Number(e.target.value)||0;save();renderPatterns()};
+  d.querySelector(".py").onchange=e=>{x.day=Math.min(31,Math.max(1,Number(e.target.value)||1));save();renderPatterns()};
+  d.querySelector(".pnote").onchange=e=>{x.note=e.target.value;save()};
   d.querySelector(".pd").onclick=()=>{state.patterns.splice(i,1);save();renderPatterns()};
   p.appendChild(d);
  });
@@ -103,15 +107,17 @@ $("add").onclick=()=>{
 };
 $("makeNext").onclick=()=>{
  let nk=keyShift(state.view,1);
- let [y,m]=nk.split("-").map(Number),last=new Date(y,m,0).getDate();
  let created=0;
  if(!state.months[nk]) state.months[nk]=[];
- const month=state.months[nk];
+ const baseMonth=nk;
  state.patterns.forEach((p,i)=>{
    if(!p.pid) p.pid=`p-${Date.now()}-${i}-${Math.random().toString(36).slice(2,8)}`;
-   const exists=month.some(x=>x.patternId===p.pid);
+   const targetMonth=keyShift(baseMonth,p.offset===1?1:0);
+   let [y,m]=targetMonth.split("-").map(Number),last=new Date(y,m,0).getDate();
+   const date=`${targetMonth}-${String(Math.min(p.day,last)).padStart(2,"0")}`;
+   const exists=Object.values(state.months).some(list=>list.some(x=>x.patternId===p.pid&&x.date===date));
    if(!exists){
-     month.push({id:Date.now()+i,name:p.name,amount:p.amount,date:`${nk}-${String(Math.min(p.day,last)).padStart(2,"0")}`,note:p.note||"",done:false,patternId:p.pid});
+     (state.months[targetMonth]??=[]).push({id:Date.now()+i,name:p.name,amount:p.amount,date,note:p.note||"",done:false,patternId:p.pid});
      created++;
    }
  });
