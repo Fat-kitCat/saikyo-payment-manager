@@ -1,141 +1,79 @@
 <!doctype html>
 <html lang="ja">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
-<link rel="manifest" href="manifest.json">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#ffffff"><link rel="manifest" href="manifest.json">
 <title>最強！支払い最強管理アプリ</title>
 <style>
 :root{font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue",sans-serif;color:#222;background:#f6f6f6}
-*{box-sizing:border-box}body{margin:0;padding:16px}.app{max-width:720px;margin:auto}
-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-button,input{font:inherit}button{min-height:44px;border:1px solid #ddd;border-radius:12px;background:white;padding:8px 14px}
+*{box-sizing:border-box}body{margin:0;padding:14px}.app{max-width:720px;margin:auto}
+header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}button,input,select{font:inherit}button{min-height:44px;border:1px solid #ddd;border-radius:12px;background:white;padding:8px 14px}
 .primary{background:#222;color:white;border-color:#222}.tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}.tabs button.active{background:#222;color:white}
-.card,.row{background:white;border:1px solid #e2e2e2;border-radius:16px;padding:14px;margin-bottom:10px}
-.big{font-size:36px;font-weight:800}.muted{color:#777;font-size:13px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}.stat{background:#f4f4f4;border-radius:12px;padding:10px}
-.form{display:grid;gap:8px}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-input{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;background:white}
-.row.done{opacity:.48}.row.done .name{text-decoration:line-through}.line{display:flex;gap:10px;align-items:center}.grow{flex:1;min-width:0}.note{margin-top:8px}.danger{color:#a00}
-@media(max-width:420px){body{padding:12px}.two{grid-template-columns:1fr}.big{font-size:32px}}
+.card,.row{background:white;border:1px solid #e2e2e2;border-radius:16px;padding:14px;margin-bottom:10px}.hero{padding:18px}.heroLabel{font-size:14px;color:#666}.heroAmount{font-size:42px;font-weight:900;line-height:1.15;margin:4px 0 14px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px}.stat{background:#f4f4f4;border-radius:12px;padding:10px}.money{font-size:18px}.muted{color:#777;font-size:13px}.line{display:flex;gap:10px;align-items:center}.grow{flex:1;min-width:0}.form{display:grid;gap:8px}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}input,select{width:100%;padding:11px;border:1px solid #ddd;border-radius:10px;background:white}.row.done{opacity:.48}.row.done .name{text-decoration:line-through}.note{margin-top:8px}.danger{color:#a00}.salary{display:grid;grid-template-columns:1fr 1fr;gap:8px;align-items:end}.salary label,.pattern label{font-size:12px;color:#666;display:block;margin-bottom:5px}.cycle{font-size:13px;color:#666;margin-top:3px}.positive{font-weight:800}.negative{font-weight:800}.pattern .two{grid-template-columns:1fr 1fr}.pill{display:inline-block;background:#f0f0f0;border-radius:999px;padding:4px 8px;font-size:12px}
+@media(max-width:420px){body{padding:10px}.two,.salary{grid-template-columns:1fr}.heroAmount{font-size:36px}}
 </style>
 </head>
 <body>
-<script>
-/* 公開版：個人データを初期投入しない */
-window.PUBLIC_EMPTY_DEFAULTS = true;
-try {
-  const p = JSON.parse(localStorage.getItem('payments') || 'null');
-  const pat = JSON.parse(localStorage.getItem('patterns') || 'null');
-  if (window.PUBLIC_EMPTY_DEFAULTS && p === null) localStorage.setItem('payments', '[]');
-  if (window.PUBLIC_EMPTY_DEFAULTS && pat === null) localStorage.setItem('patterns', '[]');
-} catch(e) {}
-</script>
-
-<main class="app" id="app">
-<header><button id="prev">‹</button><div style="text-align:center"><div class="muted">最強！支払い最強管理アプリ</div><strong id="month"></strong></div><button id="next">›</button></header>
+<main class="app">
+<header><button id="prev">‹</button><div style="text-align:center"><div class="muted">最強！支払い最強管理アプリ</div><strong id="cycleTitle"></strong><div class="cycle" id="cycleRange"></div></div><button id="next">›</button></header>
 <div class="tabs"><button id="monthTab" class="active">今月の支払い</button><button id="patternTab">マイパターン</button></div>
-
 <section id="monthView">
-<div class="card"><div class="muted">残りの支払い</div><div class="big" id="remaining">¥0</div>
-<div class="stats"><div class="stat">支払い総額<br><b id="total">¥0</b></div><div class="stat">支払済<br><b id="paid">¥0</b></div></div></div>
-<div class="line" style="margin-bottom:10px"><button id="makeNext" class="primary grow">＋ 次の月を作成</button><button id="hideDone">済を隠す</button></div>
+<div class="card hero">
+ <div class="heroLabel">残りの支払い</div><div class="heroAmount" id="remaining">¥0</div>
+ <div class="salary"><div><label for="salary">この給料</label><input id="salary" type="number" min="0" inputmode="numeric" placeholder="給料額"></div><div><div class="heroLabel">支払い後の給料残金</div><div class="money" id="salaryLeft">¥0</div></div></div>
+ <div class="stats" style="margin-top:10px"><div class="stat">支払い総額<br><b id="total">¥0</b></div><div class="stat">支払済<br><b id="paid">¥0</b></div></div>
+</div>
+<div class="line" style="margin-bottom:10px"><button id="makeNext" class="primary grow">＋ 次の給料分を作成</button><button id="hideDone">済を隠す</button></div>
 <div id="notice" class="muted"></div><div id="list"></div>
 <div class="card form"><b>＋ 支払いを追加</b><input id="newName" placeholder="支払い項目"><div class="two"><input id="newAmount" type="number" min="0" placeholder="金額" inputmode="numeric"><input id="newDate" type="date"></div><input id="newNote" placeholder="備考（任意）"><button id="add" class="primary">追加する</button></div>
 </section>
-
 <section id="patternView" hidden>
-<div class="card"><b>マイパターン</b><div class="muted" style="margin-top:5px">毎月の基本設定。各月で変更してもパターンは変わりません。<br>支払月は「当月」または「翌月」、日付は1〜31日で設定できます。</div></div>
+<div class="card"><b>マイパターン</b><div class="muted" style="margin-top:5px">給料日を基準に、毎月の支払いを登録します。各給料分を編集してもパターンは変わりません。</div>
+<div class="two" style="margin-top:10px"><div><label style="font-size:12px;color:#666">毎月の給料日</label><input id="payday" type="number" min="1" max="31" value="25" inputmode="numeric"></div><div><div class="muted">現在の設定</div><b id="paydayText">毎月25日</b></div></div></div>
 <div id="patterns"></div><button id="addPattern" class="primary" style="width:100%">＋ パターンを追加</button>
 </section>
 </main>
 <script>
-const STORE="sena-payment-manager-v3";
-let state=JSON.parse(localStorage.getItem(STORE)||"null")||{view:new Date().toISOString().slice(0,7),months:{},patterns:[]};
-let hideDone=false;
-const $=id=>document.getElementById(id);
-const yen=n=>new Intl.NumberFormat("ja-JP",{style:"currency",currency:"JPY",maximumFractionDigits:0}).format(n);
+const STORE="sena-payment-manager-v4";
+let state=JSON.parse(localStorage.getItem(STORE)||"null")||{view:new Date().toISOString().slice(0,7),cycles:{},patterns:[],payday:25};
+if(!state.cycles) state.cycles={}; if(!Array.isArray(state.patterns)) state.patterns=[]; state.payday=Math.min(31,Math.max(1,Number(state.payday)||25));
+let hideDone=false; const $=id=>document.getElementById(id);
+const yen=n=>new Intl.NumberFormat("ja-JP",{style:"currency",currency:"JPY",maximumFractionDigits:0}).format(n||0);
 const save=()=>localStorage.setItem(STORE,JSON.stringify(state));
-const monthLabel=k=>{let [y,m]=k.split("-");return `${y}年${Number(m)}月`};
-function keyShift(k,n){let [y,m]=k.split("-").map(Number),d=new Date(y,m-1+n,1);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
-function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function monthKeyFromDate(d){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`}
+function keyShift(k,n){let [y,m]=k.split("-").map(Number),d=new Date(y,m-1+n,1);return monthKeyFromDate(d)}
+function salaryDate(k){let [y,m]=k.split("-").map(Number),last=new Date(y,m,0).getDate();return new Date(y,m-1,Math.min(state.payday,last));}
+function cycleEnd(k){let d=salaryDate(keyShift(k,1));d.setDate(d.getDate()-1);return d}
+function cycleRange(k){let a=salaryDate(k),b=cycleEnd(k);return `${a.getFullYear()}/${a.getMonth()+1}/${a.getDate()}〜${b.getFullYear()}/${b.getMonth()+1}/${b.getDate()}`}
+function targetDate(baseKey,p){let targetKey=keyShift(baseKey,Number(p.offset)||0),[y,m]=targetKey.split("-").map(Number),last=new Date(y,m,0).getDate(),day=p.day==="last"?last:Math.min(Number(p.day)||1,last);return new Date(y,m-1,day)}
+function inCycle(date,k){return date>=salaryDate(k)&&date<=cycleEnd(k)}
 function render(){
- $("month").textContent=monthLabel(state.view);
- let arr=state.months[state.view]||[]; arr.sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
- let total=0,paid=0; arr.forEach(x=>{total+=Number(x.amount)||0;if(x.done)paid+=Number(x.amount)||0});
- $("total").textContent=yen(total);$("paid").textContent=yen(paid);$("remaining").textContent=yen(total-paid);
- const list=$("list");list.innerHTML="";
- arr.forEach(x=>{
-   if(hideDone&&x.done)return;
-   let d=document.createElement("div");d.className="row"+(x.done?" done":"");
-   d.innerHTML=`<div class="line"><input class="check" type="checkbox" ${x.done?"checked":""} style="width:22px;height:22px"><input class="name grow" value="${esc(x.name)}"><button class="del danger">削除</button></div>
-   <div class="two" style="margin-top:8px"><input class="amount" type="number" min="0" value="${x.amount}"><input class="date" type="date" value="${x.date}"></div>
-   <input class="note" placeholder="備考（任意）" value="${esc(x.note||"")}">`;
-   d.querySelector(".check").onchange=e=>{x.done=e.target.checked;save();render()};
-   d.querySelector(".name").onchange=e=>{x.name=e.target.value.trim()||"未入力";save();render()};
-   d.querySelector(".amount").onchange=e=>{x.amount=Math.max(0,Number(e.target.value)||0);save();render()};
-   d.querySelector(".date").onchange=e=>{if(e.target.value){x.date=e.target.value;save();render()}};
-   d.querySelector(".note").onchange=e=>{x.note=e.target.value;save()};
-   d.querySelector(".del").onclick=()=>{state.months[state.view]=arr.filter(i=>i.id!==x.id);save();render()};
-   list.appendChild(d);
- });
+ const k=state.view;$('cycleTitle').textContent=`${Number(k.slice(5))}月給料分`;$('cycleRange').textContent=cycleRange(k);
+ const c=state.cycles[k]||{salary:0,items:[]}; if(!Array.isArray(c.items)) c.items=[];
+ let total=0,paid=0; c.items.forEach(x=>{total+=Number(x.amount)||0;if(x.done)paid+=Number(x.amount)||0});
+ $('salary').value=c.salary||"";$('total').textContent=yen(total);$('paid').textContent=yen(paid);$('remaining').textContent=yen(total-paid);$('salaryLeft').textContent=yen((Number(c.salary)||0)-total);
+ const list=$('list');list.innerHTML="";let arr=[...c.items].sort((a,b)=>a.date.localeCompare(b.date)||a.id-b.id);
+ arr.forEach(x=>{if(hideDone&&x.done)return;let d=document.createElement('div');d.className='row'+(x.done?' done':'');d.innerHTML=`<div class="line"><input class="check" type="checkbox" ${x.done?'checked':''} style="width:22px;height:22px"><input class="name grow" value="${esc(x.name)}"><button class="del danger">削除</button></div><div class="two" style="margin-top:8px"><input class="amount" type="number" min="0" value="${x.amount}"><input class="date" type="date" value="${x.date}"></div><input class="note" placeholder="備考（任意）" value="${esc(x.note||"")}">`;
+ d.querySelector('.check').onchange=e=>{x.done=e.target.checked;save();render()};d.querySelector('.name').onchange=e=>{x.name=e.target.value.trim()||'未入力';save();render()};d.querySelector('.amount').onchange=e=>{x.amount=Math.max(0,Number(e.target.value)||0);save();render()};d.querySelector('.date').onchange=e=>{if(e.target.value){x.date=e.target.value;save();render()}};d.querySelector('.note').onchange=e=>{x.note=e.target.value;save()};d.querySelector('.del').onclick=()=>{c.items=c.items.filter(i=>i.id!==x.id);save();render()};list.appendChild(d)});
 }
 function renderPatterns(){
- const p=$("patterns");p.innerHTML="";
- state.patterns.forEach((x,i)=>{
-  if(!x.pid) x.pid=`p-${Date.now()}-${i}-${Math.random().toString(36).slice(2,8)}`;
-  if(x.offset!==1) x.offset=0;
-  let d=document.createElement("div");d.className="card";
-  d.innerHTML=`<div class="line"><input class="pn grow" value="${esc(x.name)}"><button class="pd danger">削除</button></div>
-  <div class="two" style="margin-top:8px"><input class="pa" type="number" min="0" value="${x.amount}"><div class="two"><select class="poff" aria-label="支払月"><option value="0" ${x.offset===0?"selected":""}>当月</option><option value="1" ${x.offset===1?"selected":""}>翌月</option></select><input class="py" type="number" min="1" max="31" value="${x.day}" placeholder="支払日"></div></div>
-  <div class="muted" style="margin-top:6px">${x.offset===0?"当月":"翌月"} ${x.day}日に支払い</div>
-  <input class="pnote note" value="${esc(x.note||"")}" placeholder="備考（任意）">`;
-  d.querySelector(".pn").onchange=e=>{x.name=e.target.value.trim()||"未入力";save();renderPatterns()};
-  d.querySelector(".pa").onchange=e=>{x.amount=Math.max(0,Number(e.target.value)||0);save()};
-  d.querySelector(".poff").onchange=e=>{x.offset=Number(e.target.value)||0;save();renderPatterns()};
-  d.querySelector(".py").onchange=e=>{x.day=Math.min(31,Math.max(1,Number(e.target.value)||1));save();renderPatterns()};
-  d.querySelector(".pnote").onchange=e=>{x.note=e.target.value;save()};
-  d.querySelector(".pd").onclick=()=>{state.patterns.splice(i,1);save();renderPatterns()};
-  p.appendChild(d);
- });
+ $('payday').value=state.payday;$('paydayText').textContent=`毎月${state.payday}日`;
+ const p=$('patterns');p.innerHTML="";
+ state.patterns.forEach((x,i)=>{if(!x.pid)x.pid=`p-${Date.now()}-${i}-${Math.random().toString(36).slice(2,8)}`;if(x.offset==null)x.offset=1;if(x.day==null)x.day=1;
+ let d=document.createElement('div');d.className='card pattern';d.innerHTML=`<div class="line"><input class="pn grow" value="${esc(x.name)}"><button class="pd danger">削除</button></div><div class="two" style="margin-top:8px"><div><label>支払月</label><select class="poff"><option value="0" ${Number(x.offset)===0?'selected':''}>給料月</option><option value="1" ${Number(x.offset)===1?'selected':''}>給料翌月</option><option value="2" ${Number(x.offset)===2?'selected':''}>2か月後</option><option value="3" ${Number(x.offset)===3?'selected':''}>3か月後</option></select></div><div><label>支払日</label><select class="pday">${Array.from({length:31},(_,n)=>`<option value="${n+1}" ${String(x.day)===String(n+1)?'selected':''}>${n+1}日</option>`).join('')}<option value="last" ${x.day==='last'?'selected':''}>月末</option></select></div></div><div class="two" style="margin-top:8px"><input class="pa" type="number" min="0" value="${x.amount}"><input class="pnote" placeholder="備考（任意）" value="${esc(x.note||"")}"></div><div class="muted" style="margin-top:6px">${['給料月','給料翌月','2か月後','3か月後'][Number(x.offset)||0]}・${x.day==='last'?'月末':x.day+'日'}</div>`;
+ d.querySelector('.pn').onchange=e=>{x.name=e.target.value.trim()||'未入力';save();renderPatterns()};d.querySelector('.poff').onchange=e=>{x.offset=Number(e.target.value);save();renderPatterns()};d.querySelector('.pday').onchange=e=>{x.day=e.target.value==='last'?'last':Number(e.target.value);save();renderPatterns()};d.querySelector('.pa').onchange=e=>{x.amount=Math.max(0,Number(e.target.value)||0);save()};d.querySelector('.pnote').onchange=e=>{x.note=e.target.value;save()};d.querySelector('.pd').onclick=()=>{state.patterns.splice(i,1);save();renderPatterns()};p.appendChild(d)});
 }
-$("add").onclick=()=>{
- let name=$("newName").value.trim(),amount=Number($("newAmount").value),date=$("newDate").value;
- if(!name||!date||!Number.isFinite(amount)||amount<0){$("notice").textContent="項目・金額・支払日を入力してください。";return}
- (state.months[state.view]??=[]).push({id:Date.now(),name,amount,date,note:$("newNote").value.trim(),done:false});
- $("newName").value=$("newAmount").value=$("newDate").value=$("newNote").value="";$("notice").textContent="追加しました。";save();render();
-};
-$("makeNext").onclick=()=>{
- let nk=keyShift(state.view,1);
- let created=0;
- if(!state.months[nk]) state.months[nk]=[];
- const baseMonth=nk;
- state.patterns.forEach((p,i)=>{
-   if(!p.pid) p.pid=`p-${Date.now()}-${i}-${Math.random().toString(36).slice(2,8)}`;
-   const targetMonth=keyShift(baseMonth,p.offset===1?1:0);
-   let [y,m]=targetMonth.split("-").map(Number),last=new Date(y,m,0).getDate();
-   const date=`${targetMonth}-${String(Math.min(p.day,last)).padStart(2,"0")}`;
-   const exists=Object.values(state.months).some(list=>list.some(x=>x.patternId===p.pid&&x.date===date));
-   if(!exists){
-     (state.months[targetMonth]??=[]).push({id:Date.now()+i,name:p.name,amount:p.amount,date,note:p.note||"",done:false,patternId:p.pid});
-     created++;
-   }
- });
- state.view=nk;
- $("notice").textContent=created?`マイパターンから${created}件を追加しました。`:"次の月はすでに作成済みです。追加するパターンはありません。";
- save();render();
-};
-$("prev").onclick=()=>{state.view=keyShift(state.view,-1);hideDone=false;save();render()};
-$("next").onclick=()=>{state.view=keyShift(state.view,1);hideDone=false;save();render()};
-$("hideDone").onclick=()=>{hideDone=!hideDone;$("hideDone").textContent=hideDone?"済を表示":"済を隠す";render()};
-$("monthTab").onclick=()=>{$("monthView").hidden=false;$("patternView").hidden=true;$("monthTab").classList.add("active");$("patternTab").classList.remove("active")};
-$("patternTab").onclick=()=>{$("monthView").hidden=true;$("patternView").hidden=false;$("patternTab").classList.add("active");$("monthTab").classList.remove("active");renderPatterns()};
-$("addPattern").onclick=()=>{state.patterns.push({pid:`p-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name:"新しい支払い",amount:0,day:1,note:""});save();renderPatterns()};
+function ensureCycle(k){if(!state.cycles[k])state.cycles[k]={salary:0,items:[]};if(!Array.isArray(state.cycles[k].items))state.cycles[k].items=[];return state.cycles[k]}
+function addPatternsToCycle(k){let c=ensureCycle(k),created=0;state.patterns.forEach((p,i)=>{if(!p.pid)p.pid=`p-${Date.now()}-${i}-${Math.random().toString(36).slice(2,8)}`;let d=targetDate(k,p);if(!inCycle(d,k))return;let date=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;let exists=c.items.some(x=>x.patternId===p.pid);if(!exists){c.items.push({id:Date.now()+created,name:p.name,amount:p.amount,date,note:p.note||'',done:false,patternId:p.pid});created++}});return created}
+$('salary').onchange=e=>{let c=ensureCycle(state.view);c.salary=Math.max(0,Number(e.target.value)||0);save();render()};
+$('payday').onchange=e=>{state.payday=Math.min(31,Math.max(1,Number(e.target.value)||25));save();renderPatterns();render()};
+$('add').onclick=()=>{let name=$('newName').value.trim(),amount=Number($('newAmount').value),date=$('newDate').value;if(!name||!date||!Number.isFinite(amount)||amount<0){$('notice').textContent='項目・金額・支払日を入力してください。';return}let c=ensureCycle(state.view);c.items.push({id:Date.now(),name,amount,date,note:$('newNote').value.trim(),done:false});$('newName').value=$('newAmount').value=$('newDate').value=$('newNote').value='';$('notice').textContent='追加しました。';save();render()};
+$('makeNext').onclick=()=>{let nk=keyShift(state.view,1);let c=ensureCycle(nk);let created=addPatternsToCycle(nk);state.view=nk;$('notice').textContent=created?`マイパターンから${created}件を追加しました。`:'次の給料分は作成済みです。追加するパターンはありません。';save();render()};
+$('prev').onclick=()=>{state.view=keyShift(state.view,-1);hideDone=false;save();render()};$('next').onclick=()=>{state.view=keyShift(state.view,1);hideDone=false;save();render()};$('hideDone').onclick=()=>{hideDone=!hideDone;$('hideDone').textContent=hideDone?'済を表示':'済を隠す';render()};
+$('monthTab').onclick=()=>{$('monthView').hidden=false;$('patternView').hidden=true;$('monthTab').classList.add('active');$('patternTab').classList.remove('active')};$('patternTab').onclick=()=>{$('monthView').hidden=true;$('patternView').hidden=false;$('monthTab').classList.remove('active');$('patternTab').classList.add('active');renderPatterns()};
+$('addPattern').onclick=()=>{state.patterns.push({pid:`p-${Date.now()}-${Math.random().toString(36).slice(2,8)}`,name:'新しい支払い',amount:0,offset:1,day:1,note:''});save();renderPatterns()};
 render();
 </script>
-<script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
-}
-</script></body>
-</html>
+<script>if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js?v=4').catch(()=>{}));}</script>
+</body></html>
