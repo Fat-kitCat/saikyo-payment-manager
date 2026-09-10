@@ -1,0 +1,9 @@
+{
+  "name": "最強！支払い最強管理アプリ",
+  "short_name": "支払い最強管理",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f6f6f6",
+  "theme_color": "#ffffff",
+  "icons": []
+}
